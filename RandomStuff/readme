@@ -1,1 +1,4 @@
-There is a uniswap python package. Quite an easy way to get live price data that is reliable. Please don't share the Web3 Provider URL. We are limited in how many calls we can make(ca. 100k / day).
+There is a uniswap python package. Quite an easy way to get live price data that is reliable. 
+Please don't share the Web3 Provider URL. We are limited in how many calls we can make(ca. 100k / day).
+
+Here is the URL to the python package doc: https://uniswap-python.com/getting-started.html#installation
