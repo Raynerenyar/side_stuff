@@ -1,0 +1,16 @@
+{
+  "contracts": {
+    "GNSTestnetTradingStorageV5": "277c4660169d5a6852e074eb23ed30e8bf635ff3",
+    "GNSTradingV6_2": "09c499d8efbead47a2a049444ce2de05240b28ad"
+  },
+  "tests": {
+    "tests/test_Interactions.py": {
+      "coverage": false,
+      "isolated": false,
+      "results": ".",
+      "sha1": "8bdc2f6d8216c97d1d4a47cfeea2edf5735630cc",
+      "txhash": []
+    }
+  },
+  "tx": {}
+}
