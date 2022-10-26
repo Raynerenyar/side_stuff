@@ -18,16 +18,18 @@ def getBTC1h(startDate, endDate, filename='Bitstamp_BTCUSD_1h.csv'):
         reader = csv.reader(csvfile)
         # unix, date, symbol, open, high, low, close, Volume BTC ,Volume USD
         for row in reader:
+            # skip first 2 rows as those are headers
             if len(row) == 9 and row[0].isdigit():
                 [currYear, currMon, day] = row[1].split('-')
                 currDay = day.split(' ')[0]
                 startDate = datetime.datetime(int(startYear),int(startMonth),int(startDay))
                 currDate = datetime.datetime(int(currYear),int(currMon),int(currDay))
                 test = currDate - startDate
+                # get date of current row. If reached startDate, break loop
                 toEnd = (currDate - startDate).days < 0
+                
                 if toEnd:
                     break
-            
                 else:
                     for i in range(0,9): # 9 columns
                         if (i == 1):
