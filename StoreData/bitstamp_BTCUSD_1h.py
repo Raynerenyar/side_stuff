@@ -6,10 +6,6 @@ data = dict({'Date': [], 'Close': []})
 def formatDate(date):
     return date.split('-')
 
-def formatD(date):
-    [year,month,day] = date.split('-')
-    return datetime.datetime(int(year),int(month),int(day))
-
 # @param date yyyy-mm-dd
 def getBTC1h(startDate, endDate, filename='Bitstamp_BTCUSD_1h.csv'):
     [startYear, startMonth, startDay] = formatDate(startDate)
