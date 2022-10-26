@@ -1,7 +1,7 @@
 import csv
 import datetime
 
-data = dict({'date': [], 'close': []})
+data = dict({'Date': [], 'Close': []})
 
 def formatDate(date):
     return date.split('-')
@@ -33,13 +33,13 @@ def getBTC1h(startDate, endDate, filename='Bitstamp_BTCUSD_1h.csv'):
                 else:
                     for i in range(0,9): # 9 columns
                         if (i == 1):
-                            data['date'].append(row[1])
+                            data['Date'].append(row[1])
                         elif (i == 6):
-                            data['close'].append(row[6])
+                            data['Close'].append(row[6])
         
-        data['date'].reverse()
-        data['close'].reverse()
-        print(data)
+        data['Date'].reverse()
+        data['Close'].reverse()
+        # print(data)
     
     return data
 
