@@ -9,10 +9,12 @@ from .StoreData.UniswapData import get_uniswap_price
 import sched, time
 import pandas as pd
 import warnings
+from .StoreData.bitstamp_BTCUSD_1h import getBTC1h
 warnings.simplefilter(action='ignore', category=Warning)
 import logging
 logging.disable(logging.WARNING)
 logging.disable(logging.INFO)
+import pathlib, os
 
 
 
@@ -58,7 +60,7 @@ stop_loss = 15
 slippage = 0.25
 referrer = "0x786e22B4BF1ef3a73Be33dF36E61321CCddba345"
 last_buy = datetime.datetime.now()-datetime.timedelta(minutes=15)
-simulate = False
+simulate = True
 
 def bot(data, price):
     global last_buy, positions
@@ -69,13 +71,15 @@ def bot(data, price):
     price = price
     long = Positions.longPosition(data)
     short = Positions.shortPosition(data)
-
+    #print(data["Aroon down"])
+    #print(data["RSI"])
 
     # time calculations so last investment > 10 mins ago
     now = datetime.datetime.now()
     time_difference = (now - last_buy).total_seconds()
 
     # if we don't have any positions open yet
+    #print(positions)
     if len(positions) == 0:
         if long == PositionOptions.OPEN_LONG:
             # open long position
@@ -96,12 +100,13 @@ def bot(data, price):
     else:
         # price difference for DCA part
         price_difference = price - positions[0].price
-        print(price_difference)
+        #print(price_difference)
 
         isLong = positions[0].isLong
         if isLong:
             # Stop loss, Stop loss gets done automatically by Gains Trade. Howesver we need to delete the positions.
             s_l = False
+            #print(price_difference, position[0].price)
             if price_difference < -1 * positions[0].price * 0.15:
                 s_l = True
 
@@ -138,7 +143,7 @@ def bot(data, price):
 
             # DCA part
             if short == PositionOptions.OPEN_SHORT and (time_difference>60*10 or simulate):
-                if price_difference > position[0].price * (position[-1].percent_fall+1)/100 and position[-1].percent_fall < 10:
+                if price_difference > positions[0].price * (positions[-1].percent_fall+1)/100 and positions[-1].percent_fall < 10:
                     # DCA, open another position
                     position = Positions(False, price, positions[0].tvl_at_open, positions[-1].percent_fall+1)
                     positions.append(position)
@@ -150,12 +155,38 @@ def bot(data, price):
 def main():
     # To simulate use read_data_from_db of the DATA Generator function
     if simulate:
-        # Needs to be replaced by something better
+        """# Needs to be replaced by something better
         data = read_data_from_db(10000)
         data = pd.DataFrame(data, columns=["Close", "Time"])
         for i in range(600):
             data_ = data[i*15:(i+1)*15]
-            bot(data_, data_["Close"])  
+            bot(data_, data_["Close"])  """
+        directory = pathlib.Path(__file__).parent.resolve()
+        data = getBTC1h('2022-01-01','2022-10-26', filename=os.path.join(directory, 'StoreData/Bitstamp_BTCUSD_1h.csv'))
+        #print(data)
+        data_indicator = data[data.index % 24 == 0]  # Selects every 3rd raw starting from 0
+        data_indicator["Close"] = data_indicator["Close"].astype("double")
+        data_indicator = data_indicator.reset_index()
+
+        #print(data_indicator)
+        for index, row in data_indicator.iterrows():
+            #print(row['c1'], row['c2'])
+            if index > 15:# and index < 16:
+                data_indicator_current = data_indicator.copy(deep=True)
+                data_indicator_current = data_indicator_current.iloc[index-14:index+1]
+                """for i in range(24):
+                    data_indicator_current = data_indicator.copy(deep=True)
+                    data_indicator_current = data_indicator_current.iloc[index-14:index]
+                    print(data_indicator_current)"""
+                #print(data_indicator_current)
+                #print(data)
+                for i in range(24):
+                    if index*24+i+1 < data.shape[0]:
+                        price = data[index*24+i:index*24+i+1]["Close"]
+                        #print(price)
+                        bot(data_indicator_current, float(price))
+                        
+
 
     else:
         # Does all the calculations every minute
