@@ -1,5 +1,6 @@
 import csv
 import datetime
+import pandas as pd
 
 data = dict({'Date': [], 'Close': []})
 
@@ -37,6 +38,25 @@ def getBTC1h(startDate, endDate, filename='Bitstamp_BTCUSD_1h.csv'):
         data['Close'].reverse()
         # print(data)
     
-    return data
+    return pd.DataFrame.from_dict(data)
 
-# getBTC1h('2022-10-25','2022-10-26')
+data = getBTC1h('2022-10-01','2022-10-26', filename='Code/scripts/StoreData/Bitstamp_BTCUSD_1h.csv')
+print(data)
+data_indicator = data[data.index % 24 == 0]  # Selects every 3rd raw starting from 0
+data_indicator = data_indicator.reset_index()
+print(data_indicator)
+for index, row in data_indicator.iterrows():
+    #print(row['c1'], row['c2'])
+    if index > 14:# and index < 16:
+        data_indicator_current = data_indicator.copy(deep=True)
+        data_indicator_current = data_indicator_current.iloc[index-13:index+1]
+        """for i in range(24):
+            data_indicator_current = data_indicator.copy(deep=True)
+            data_indicator_current = data_indicator_current.iloc[index-14:index]
+            print(data_indicator_current)"""
+        print(data_indicator_current)
+        #print(data)
+        for i in range(24):
+            if index*24+i+1 < data.shape[0]:
+                price = data[index*24+i:index*24+i+1]["Date"]
+                print(price)
