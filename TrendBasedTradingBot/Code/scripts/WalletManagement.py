@@ -4,12 +4,11 @@ from brownie import GNSTradingV6_2, config, accounts, Contract, GNSDaiTokenV5
 import time
 from .Interaction import open_trade, close_trade
 #import Bot
-
-
 """
 Gains Trade only allows 3 positions per Wallet and Traiding pair. We DCA and therefore need at least 11 positions.
 The solution for this problem is this file. We use 4 wallets instead of one. Everything happens automatically.
 """
+
 
 
 trading_v6_testnet = "0x81465dF3c64B18b4092990eB73200A3814AF75E5"
@@ -39,7 +38,10 @@ percent_fall_to_account = {
 }
 
 
-simulate = False
+simulate = True
+all_trades = []
+
+
 
 # approves DAI for all wallets
 def approve_all(amount):
@@ -53,11 +55,14 @@ def get_testnet_dai():
 
 
 def get_total_balance():
-    total_balance = 0
-    for a in our_accounts:
-        total_balance += gnsDaiTokenV5.balanceOf(a)
-        #print(a)
-    print(total_balance/10**18)
+    if not simulate:
+        total_balance = 0
+        for a in our_accounts:
+            total_balance += gnsDaiTokenV5.balanceOf(a)
+            #print(a)
+        #print(total_balance/10**18)
+    else:
+        total_balance = 10000
     return total_balance/10**18
 
 def get_balances():
@@ -99,21 +104,29 @@ def make_trades(last_position, pairIndex, price, buy_trade, leverage, take_profi
         initial = "Initial"
         if last_position.percent_fall != 0:
             initial = "DCA"
-        print(f"Open {long}, {initial} {last_position.percent_fall}")
+        print(f"Open {long}, {initial} {last_position.percent_fall} {price}")
+        all_trades.append([0, long, initial, price])
 
 # Closes trades
-def close_trades(last_position, pairIndex):
+def close_trades(last_position, pairIndex, price):
     percent_fall = last_position.percent_fall
     if not simulate:
         for i in range(last_position.percent_fall+1):
             close_trade(percent_fall_to_account[percent_fall], pairIndex, percent_fall%3)
         rebalance_wallets()
     else:
-        print("Close all positions")
+        print(f"Close all positions at {price}")
+        all_trades.append([1, price])
 
 def make_transfer(to, from_, amount):
     tx = gnsDaiTokenV5.transfer(to, amount, {"from": from_})
     tx.wait(1)
+
+
+# Trade: Open: [0, long/short, initial/DCA, price]
+#        Short:[1, price]
+def get_all_trades():
+    return all_trades
 
 
 def main():
