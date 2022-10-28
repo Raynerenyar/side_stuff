@@ -3,7 +3,7 @@ import talib
 import numpy as np
 from enum import Enum
 import datetime
-from .WalletManagement import make_trades, close_trades, rebalance_wallets, get_total_balance
+from .WalletManagement import make_trades, close_trades, rebalance_wallets, get_total_balance, get_all_trades
 from .StoreData.main import read_data_from_db, eth, dai
 from .StoreData.UniswapData import get_uniswap_price
 import sched, time
@@ -15,7 +15,6 @@ import logging
 logging.disable(logging.WARNING)
 logging.disable(logging.INFO)
 import pathlib, os
-
 
 
 class PositionOptions(Enum):
@@ -60,6 +59,9 @@ stop_loss = 15
 slippage = 0.25
 referrer = "0x786e22B4BF1ef3a73Be33dF36E61321CCddba345"
 last_buy = datetime.datetime.now()-datetime.timedelta(minutes=15)
+
+
+# For simulations
 simulate = True
 
 def bot(data, price):
@@ -113,12 +115,12 @@ def bot(data, price):
             # Close when market gets too bearish
             if long == PositionOptions.CLOSE_LONG or s_l:
                 last_position = positions[-1]
-                close_trades(last_position, pairIndex)
+                close_trades(last_position, pairIndex, price)
                 last_buy = datetime.datetime.now()-datetime.timedelta(minutes=15)
                 positions = []
             
             # DCA part
-            if long == PositionOptions.OPEN_LONG and (time_difference>60*10 or simulate): # check if price moved in wrong direction
+            elif long == PositionOptions.OPEN_LONG and (time_difference>60*10 or simulate): # check if price moved in wrong direction
                 if price_difference < -1 * positions[0].price * (positions[-1].percent_fall+1)/100 and positions[-1].percent_fall < 10:
                     # DCA, open another position
                     position = Positions(True, price, positions[0].tvl_at_open, positions[-1].percent_fall+1)
@@ -137,12 +139,13 @@ def bot(data, price):
             #Close when markets get too bulish
             if short == PositionOptions.CLOSE_SHORT or s_l:
                 last_position = positions[-1]
-                close_trades(last_position, pairIndex)
+                close_trades(last_position, pairIndex, price)
                 last_buy = datetime.datetime.now()-datetime.timedelta(minutes=15)
                 positions = []
 
             # DCA part
-            if short == PositionOptions.OPEN_SHORT and (time_difference>60*10 or simulate):
+            elif short == PositionOptions.OPEN_SHORT and (time_difference>60*10 or simulate):
+                #print(len(positions))
                 if price_difference > positions[0].price * (positions[-1].percent_fall+1)/100 and positions[-1].percent_fall < 10:
                     # DCA, open another position
                     position = Positions(False, price, positions[0].tvl_at_open, positions[-1].percent_fall+1)
@@ -162,7 +165,7 @@ def main():
             data_ = data[i*15:(i+1)*15]
             bot(data_, data_["Close"])  """
         directory = pathlib.Path(__file__).parent.resolve()
-        data = getBTC1h('2022-01-01','2022-10-26', filename=os.path.join(directory, 'StoreData/Bitstamp_BTCUSD_1h.csv'))
+        data = getBTC1h('2020-01-01','2022-10-26', filename=os.path.join(directory, 'StoreData/Bitstamp_BTCUSD_1h.csv'))
         #print(data)
         data_indicator = data[data.index % 24 == 0]  # Selects every 3rd raw starting from 0
         data_indicator["Close"] = data_indicator["Close"].astype("double")
@@ -186,6 +189,43 @@ def main():
                         #print(price)
                         bot(data_indicator_current, float(price))
                         
+        # Trade: Open: [0, long/short, initial/DCA, price]
+        #        Short:[1, price]
+        trades = get_all_trades()
+        #print(trades)
+        value = 10000
+        value_at_first_buy = 10000
+        # [market direction, amount, price]    
+        trades_per_position = []
+
+        for trade in trades:
+            if trade[0] == 0:
+                long = 1
+                if trade[1] == "Long":
+                    long = 0
+
+                if trade[2] == "Initial":
+                    trades_per_position.append([long, value*0.1, trade[3]])
+                    value = value * 0.9
+                else:
+                    trades_per_position.append([long, value_at_first_buy*0.05, trade[3]])
+                    value = value - value_at_first_buy*0.05
+            else:
+                #print(trades_per_position)
+                price_now = trade[1]
+                v = 0
+                if trades_per_position[0][0] == 0:
+                    for t in trades_per_position:
+                        v += t[1] + (price_now - t[2]) * t[1]/t[2] * leverage
+                else:
+                    for t in trades_per_position:
+                        v += t[1] + (t[2]-price_now) * t[1]/t[2] * leverage
+
+                value += v
+                value_at_first_buy = value
+                trades_per_position = []
+                print(value)
+                
 
 
     else:
@@ -205,3 +245,4 @@ def main():
         s.enter(60, 1, main_func, (s,))
         s.run()
         
+
