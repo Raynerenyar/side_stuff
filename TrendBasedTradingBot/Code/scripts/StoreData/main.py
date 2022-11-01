@@ -5,8 +5,9 @@ from sqlalchemy import Column, Integer, DateTime, desc, asc
 import pathlib
 import os
 import datetime, time
-from .InitializeDB import Price, SQLALCHEMY_DATABASE_URI
-from .UniswapData import get_uniswap_price
+#from .InitializeDB import Price, SQLALCHEMY_DATABASE_URI
+import InitializeDB
+import UniswapData
 import sched
 
 eth = "0x0000000000000000000000000000000000000000"
@@ -19,7 +20,7 @@ def main():
 
     def main_func(sc):
         timestamp = datetime.datetime.now()
-        price = get_uniswap_price(eth, dai)
+        price = UniswapData.get_uniswap_price(eth, dai)
         print(price)
         add_to_db(price, timestamp)
     
@@ -33,15 +34,15 @@ def main():
 def add_to_db(price, timestamp, test=False):
     engine=None
     if test:
-        engine = create_engine(SQLALCHEMY_DATABASE_URI+"_test", echo=True)
+        engine = create_engine(InitializeDB.SQLALCHEMY_DATABASE_URI+"_test", echo=True)
 
     else:
-        engine = create_engine(SQLALCHEMY_DATABASE_URI, echo=True)
+        engine = create_engine(InitializeDB.SQLALCHEMY_DATABASE_URI, echo=True)
 
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    exchange_rate = Price(price=price, time=timestamp, id=None)
+    exchange_rate = InitializeDB.Price(price=price, time=timestamp, id=None)
     session.add(exchange_rate)
     session.commit()
     session.close()
@@ -50,15 +51,15 @@ def add_to_db(price, timestamp, test=False):
 def read_data_from_db(x, test=False):
     engine=None
     if test:
-        engine = create_engine(SQLALCHEMY_DATABASE_URI+"_test", echo=True)
+        engine = create_engine(InitializeDB.SQLALCHEMY_DATABASE_URI+"_test", echo=True)
 
     else:
-        engine = create_engine(SQLALCHEMY_DATABASE_URI, echo=True)
+        engine = create_engine(InitializeDB.SQLALCHEMY_DATABASE_URI, echo=True)
 
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    price_data = [(x.price, x.time) for x in Price.get_last_x_prices(session, x)]
+    price_data = [(x.price, x.time) for x in InitializeDB.Price.get_last_x_prices(session, x)]
     session.close()
     return price_data
 
