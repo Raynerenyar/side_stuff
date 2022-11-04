@@ -1,12 +1,11 @@
-from uniswap import Uniswap
 
-address = None          # or None if you're not going to make transactions
-private_key = None  # or None if you're not going to make transactions
-version = 3                       # specify which version of Uniswap to use
-provider = "https://mainnet.infura.io/v3/66c5cf5015244de0959f331f72cd29ab"    # can also be set through the environment variable `PROVIDER`
-uniswap = Uniswap(address=address, private_key=private_key, version=version, provider=provider)
+import requests
+import json
 
 
+def get_uniswap_price(token1, token2):
+    response_API = requests.get('https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD')
+    data = response_API.text
+    parse_json = json.loads(data)
+    return parse_json["USD"]
 
-def get_uniswap_price(token1_address, token2_address):
-    return uniswap.get_price_input(token1_address, token2_address, 10**18)/10**18
