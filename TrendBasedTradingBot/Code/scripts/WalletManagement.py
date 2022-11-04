@@ -21,7 +21,7 @@ account4 = accounts.add(config["wallets"]["wallet4"])
 
 our_accounts = [account1, account2, account3, account4]
 
-gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
+#gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
 
 percent_fall_to_account = {
     0: account1,
@@ -38,23 +38,26 @@ percent_fall_to_account = {
 }
 
 
-simulate = True
+simulate = False
 all_trades = []
 
 
 
 # approves DAI for all wallets
 def approve_all(amount):
+    gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
     for a in our_accounts:
         gnsDaiTokenV5.approve(trading_v6_testnet, amount, {"from": a})
 
 # gets some testnet dai for each wallet
 def get_testnet_dai():
+    gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
     for a in our_accounts:
         gnsDaiTokenV5.getFreeDai({"from": a})
 
 
 def get_total_balance():
+    gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
     if not simulate:
         total_balance = 0
         for a in our_accounts:
@@ -66,11 +69,13 @@ def get_total_balance():
     return total_balance/10**18
 
 def get_balances():
+    gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
     return [gnsDaiTokenV5.balanceOf(a)/10**18 for a in our_accounts]
 
 
 # rebalances all wallets to have the same amount of DAI
 def rebalance_wallets():
+    gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
     balances = get_balances()
     total_balace = 0
     for b in balances:
@@ -87,6 +92,7 @@ def rebalance_wallets():
 
 # makes a trade 
 def make_trades(last_position, pairIndex, price, buy_trade, leverage, take_profit, stop_loss, slippage, referrer):
+    gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
     if last_position.percent_fall == 0:
         position_size = last_position.tvl_at_open*0.1
     else:
@@ -109,6 +115,7 @@ def make_trades(last_position, pairIndex, price, buy_trade, leverage, take_profi
 
 # Closes trades
 def close_trades(last_position, pairIndex, price):
+    gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
     percent_fall = last_position.percent_fall
     if not simulate:
         for i in range(last_position.percent_fall+1):
@@ -119,6 +126,7 @@ def close_trades(last_position, pairIndex, price):
         all_trades.append([1, price])
 
 def make_transfer(to, from_, amount):
+    gnsDaiTokenV5 = GNSDaiTokenV5.at(gfarm_dai)
     tx = gnsDaiTokenV5.transfer(to, amount, {"from": from_})
     tx.wait(1)
 
