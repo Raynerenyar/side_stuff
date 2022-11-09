@@ -115,7 +115,7 @@ def bot(data, price):
             # Stop loss, Stop loss gets done automatically by Gains Trade. Howesver we need to delete the positions.
             s_l = False
             #print(price_difference, position[0].price)
-            if price_difference < -1 * positions[0].price * 0.15:
+            if price_difference < -1 * positions[0].price * 0.15/leverage:
                 s_l = True
 
             # Close when market gets too bearish
@@ -141,7 +141,7 @@ def bot(data, price):
 
             # Stop loss
             s_l = False
-            if price_difference > positions[0].price * 0.15:
+            if price_difference > positions[0].price * 0.15/leverage:
                 s_l = True
 
             #Close when markets get too bulish
